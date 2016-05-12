@@ -52,12 +52,13 @@ class Cms extends Eloquent {
   }
 
   public static function search($get) {
-    $query = Cms::select('cms_phy_first_name', 'cms_phy_last_name', 'cms_phy_suffix_name', 'cms_hospital_name', 'cms_amount', 'cms_payment_date');
+    $query = Cms::select('cms_id', 'cms_phy_first_name', 'cms_phy_last_name', 'cms_phy_suffix_name', 'cms_hospital_name', 'cms_amount', 'cms_payment_date');
 
-    if ($get['month_year'] != '') {
-      $startDate = date('Y-m-01', strtotime($get['month_year']));
+    if ($get['month_year'] != false) {
+      $newTime = strtotime($get['month_year'] . '-01');
+      $startDate = date('Y-m-01', $newTime);
       $endDate = date('Y-m-t', strtotime($startDate));
-      $query = is_null($get['month_year']) ? $query : $query->where('cms_pub_date', '>=', $startDate)->where('cms_pub_date', '<=', $endDate);
+      $query = is_null($get['month_year']) ? $query : $query->whereBetween('cms_pub_date', array($startDate, $endDate));
     }
 
     if ($get['by_date'] != '') {
@@ -71,7 +72,8 @@ class Cms extends Eloquent {
     $cms = $query->get();
 
     /*$queries = DB::getQueryLog();
-    $last_query = end($queries);*/
+    $last_query = end($queries);
+    d($last_query);*/
 
     return $cms;
 

@@ -9,7 +9,7 @@ class CmsController extends BaseController {
 
     if ($get = Input::get()) {
       $byDate = $get['by_date'] != '' ? $get['by_date'] : '';
-      $monthYear = $get['month_year'] != '' ? $get['month_date'] : '';
+      $monthYear = $get['month_year'] != '' ? $get['month_year'] : '';
       $cmsAmount = $get['cms_amount'] != '' ? $get['cms_amount'] : '';
       $phyName = $get['phy_name'] != '' ? $get['phy_name'] : '';
       $limit = $get['limit'] != '' ? $get['limit'] : '';
@@ -37,8 +37,6 @@ class CmsController extends BaseController {
   public function search() {
     if ($post = Input::all()) {
 
-      Log::debug("The query: {$post['query']}");
-
       $cms = Cms::select('cms_phy_state', 'cms_phy_city','cms_phy_last_name', 'cms_id', 'cms_pub_date')
          ->where('cms_phy_last_name', 'LIKE', '%' . $post['query'] . '%')
         ->orWhere('cms_phy_first_name', 'LIKE', '%' . $post['query'] . '%')
@@ -58,8 +56,6 @@ class CmsController extends BaseController {
         ->orWhere('cms_pub_date', 'LIKE', '%' . $post['query'] . '%')
         ->orWhere('cms_recipient_type', 'LIKE', '%' . $post['query'] . '%')
         ->get();
-
-      Log::debug("the result: " . print_r($cms, true));
 
       if ($cms != null){
 

@@ -5,6 +5,7 @@
 {{ HTML::script('js/bootstrap-datepicker.min.js') }}
 {{ HTML::script('js/jquery.dataTables.min.js') }}
 {{ HTML::script('js/dataTables.bootstrap.min.js') }}
+{{ HTML::script('js/bootstrap-datepicker.min.js') }}
 {{--{{ HTML::script('js/search-doctors.js') }}--}}
 {{ HTML::script('js/sd.js') }}
 
