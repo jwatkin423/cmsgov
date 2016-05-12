@@ -89,6 +89,7 @@ class CmsController extends BaseController {
     $cms = Cms::find($id);
 
     return View::make('cms.display')
+      ->with('id', $id)
       ->with('title', 'Single view')
       ->with('record', $cms);
   }

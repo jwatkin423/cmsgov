@@ -9,4 +9,14 @@ class ExcelController extends BaseController {
 
     Excelexport::exportante($cms);
   }
+
+
+  public function excelExportById() {
+    $id = Input::get('id');
+    $cms = Cms::find($id);
+
+    Excelexport::exportanteById($cms);
+
+  }
+
 }

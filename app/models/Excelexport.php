@@ -17,4 +17,19 @@ class Excelexport extends Eloquent {
     })->download('xls');
 
   }
+
+  public static function exportanteById($cms) {
+
+    Excel::create('CMS-single', function ($excel) use ($cms) {
+
+      $excel->sheet('Records', function ($sheet) use ($cms) {
+
+        $sheet->loadview('cms.exportsingle', ['record' => $cms]);
+
+      });
+
+    })->download('xls');
+
+  }
+
 }

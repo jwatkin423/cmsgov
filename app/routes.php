@@ -29,4 +29,6 @@ Route::group(array('prefix' => '/refresh'), function () {
 
 Route::group(array('prefix' => '/excel'), function () {
   Route::get('/export', array('uses' => 'ExcelController@excelExport', 'as' => 'export'));
+  Route::get('/export-by-id', array('uses' => 'ExcelController@excelExportById', 'as' => 'exportById'));
+
 });
