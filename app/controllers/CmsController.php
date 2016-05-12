@@ -34,8 +34,6 @@ class CmsController extends BaseController {
       $limit = 10;
     }
 
-
-
     return View::make('cms.index')
       ->with('by_date', $byDate)
       ->with('month_year', $monthYear)
@@ -44,6 +42,68 @@ class CmsController extends BaseController {
       ->with('limit', $limit)
       ->with('title', 'List off Records')
       ->with('records', $cms);
+  }
+
+  public function search() {
+    if ($post = Input::all()) {
+
+      Log::debug("The query: {$post['query']}");
+
+      $cms = Cms::select('cms_phy_state', 'cms_phy_city','cms_phy_last_name', 'cms_id', 'cms_pub_date')
+         ->where('cms_phy_last_name', 'LIKE', '%' . $post['query'] . '%')
+        ->orWhere('cms_phy_first_name', 'LIKE', '%' . $post['query'] . '%')
+        ->orWhere('cms_hospital_id', 'LIKE', '%' . $post['query'] . '%')
+        ->orWhere('cms_hospital_name', 'LIKE', '%' . $post['query'] . '%')
+        ->orWhere('cms_phy_address', 'LIKE', '%' . $post['query'] . '%')
+        ->orWhere('cms_phy_address_two', 'LIKE', '%' . $post['query'] . '%')
+        ->orWhere('cms_phy_city', 'LIKE', '%' . $post['query'] . '%')
+        ->orWhere('cms_phy_state', 'LIKE', '%' . $post['query'] . '%')
+        ->orWhere('cms_phy_zipcode', 'LIKE', '%' . $post['query'] . '%')
+        ->orWhere('cms_phy_country', 'LIKE', '%' . $post['query'] . '%')
+        ->orWhere('cms_payment_date', 'LIKE', '%' . $post['query'] . '%')
+        ->orWhere('cms_amount', 'LIKE', '%' . $post['query'] . '%')
+        ->orWhere('cms_payment_type', 'LIKE', '%' . $post['query'] . '%')
+        ->orWhere('cms_payment_category', 'LIKE', '%' . $post['query'] . '%')
+        ->orWhere('cms_year', 'LIKE', '%' . $post['query'] . '%')
+        ->orWhere('cms_pub_date', 'LIKE', '%' . $post['query'] . '%')
+        ->orWhere('cms_recipient_type', 'LIKE', '%' . $post['query'] . '%')
+        ->get();
+
+      Log::debug("the result: " . print_r($cms, true));
+
+      if ($cms != null){
+
+        foreach ($cms as $cm) {
+          $d[] = array(
+            'id' => $cm['cms_id'],
+            'doctor' => $cm['cms_phy_last_name'],
+            'city' => $cm['cms_phy_city'],
+            'pub_date' => $cm['cms_pub_date'],
+            'state' => $cm['cms_phy_state']
+          );
+        }
+
+        $s = json_encode($d);
+
+        Log::debug($s);
+
+        return Response::json($d);
+      }
+
+      return;
+    }
+  }
+
+  public function single($id = null) {
+    if ($id == null) {
+      $id = Input::get('id');
+    }
+
+    $cms = Cms::find($id);
+
+    return View::make('cms.display')
+      ->with('title', 'Single view')
+      ->with('record', $cms);
   }
 
 }

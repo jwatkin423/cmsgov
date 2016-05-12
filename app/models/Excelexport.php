@@ -8,7 +8,7 @@ class Excelexport extends Eloquent {
 
       $excel->sheet('Records', function ($sheet) use ($cms) {
 
-        $sheet->loadview('cms.results', ['records' => $cms]);
+        $sheet->loadview('cms.exportresults', ['records' => $cms]);
 
       });
 

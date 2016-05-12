@@ -13,9 +13,7 @@
 
         @foreach($records as $record)
           <tr>
-            <td><a href="{{ URL::route('display', $record['cms_id']) }}">
-              {{ Cms::physName($record['cms_phy_first_name'], $record['cms_phy_last_name'], $record['cms_phy_suffix_name']) }}
-            </a></td>
+            <td>{{ Cms::physName($record['cms_phy_first_name'], $record['cms_phy_last_name'], $record['cms_phy_suffix_name']) }}</td>
             <td>{{ $record['cms_hospital_name'] }}</td>
             <td>{{ $record['cms_amount'] }}</td>
           </tr>
@@ -25,8 +23,3 @@
     </table>
   </div>
 </div>
-<script type="application/javascript">
-  $( document ).ready(function() {
-    $('#results-list').DataTable({paging: true});
-  });
-</script>

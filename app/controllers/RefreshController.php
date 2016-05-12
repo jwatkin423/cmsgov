@@ -5,18 +5,34 @@ class RefreshController extends BaseController {
   private static $selectString = 'record_id, covered_recipient_type, teaching_hospital_id, teaching_hospital_name, physician_profile_id, physician_first_name, physician_middle_name, physician_last_name, physician_name_suffix, recipient_primary_business_street_address_line1, recipient_primary_business_street_address_line2, recipient_city, recipient_state, recipient_zip_code, recipient_country, physician_license_state_code1, physician_primary_type, total_amount_of_payment_usdollars, date_of_payment, form_of_payment_or_transfer_of_value, nature_of_payment_or_transfer_of_value, program_year, payment_publication_date';
 
   public function refresh() {
+    $createRows = array();
+    $updateRows = array();
+    $insertData = array();
+
     $socrata = new Socrata();
-    $count = $socrata->get('v3nw-usd7.json', array('$query' => "SELECT count(record_id)"));
-    $count = array_shift($count);
-    $offset = $count['count_record_id'] - 50;
-    $limit = 50;
-    $data = $socrata->get('v3nw-usd7.json', array('$limit' => $limit, '$offset' => $offset, '$select' => self::$selectString));
+
+    $previousCount = Summarycount::get()->first();
+
+    if ($count = $socrata->get('v3nw-usd7.json', array('$query' => "SELECT count(record_id)"))) {
+      $count = array_shift($count);
+      $newCount = intval($count['count_record_id']);
+      $sc = Summarycount::where('sc_id', '=', "1")->first();
+      $sc->current_count = $newCount;
+      $sc->save();
+    }
+
+    $offset = $previousCount->current_count + 1;
+    $limit = $count['count_record_id'] - $previousCount->current_count;
+
+    $data = $socrata->get('v3nw-usd7.json', array(
+      '$limit' => $limit, '$offset' => $offset, '$select' => self::$selectString
+    ));
 
     foreach ($data as $row) {
-      $insertdata[] = array(
+      $insertData[] = array(
         'cms_recipient_type' => isset($row['covered_recipient_type']) ? $row['covered_recipient_type'] : null,
         'cms_hospital_id' => isset($row['teaching_hospital_id']) ? $row['teaching_hospital_id'] : null,
-        'cms_ext_id' => isset($row['record_id']) ? $row['record_id'] : null,
+        'cms_ext_id' => isset($row['record_id']) ? intval($row['record_id']) : null,
         'cms_hospital_name' => isset($row['teaching_hospital_name']) ? $row['teaching_hospital_name'] : null,
         'cms_phy_profile_id' => isset($row['physician_profile_id']) ? $row['physician_profile_id'] : null,
         'cms_phy_first_name' => isset($row['physician_first_name']) ? strtolower($row['physician_first_name']) : null,
@@ -38,26 +54,49 @@ class RefreshController extends BaseController {
         'cms_year' => isset($row['program_year']) ? $row['program_year'] : null,
         'cms_pub_date' => isset($row['payment_publication_date']) ? $row['payment_publication_date'] : null
       );
+
     }
 
-    $results = Cms::insert($insertdata);
+    $totalCount = count($insertData);
 
-    $countResults = count($insertdata);
+    if ($totalCount > 0) {
+      foreach ($insertData as $row) {
+        if (Cms::where('cms_ext_id', '=', $row['cms_ext_id'])->exists()) {
+          $cms = Cms::where('cms_ext_id', '=', $row['cms_ext_id'])->first();
+          $cms->fill($row);
+          if ($cms->save()) {
+            $updateRows[] = $row['cms_ext_id'];
+          }
+        } else {
+          $cmsSave = new Cms();
+          $cmsSave->fill($row);
+          if ($cmsSave->save()) {
+            $createRows[] = $row['cms_ext_id'];
+          }
+        }
 
-    $processedData['records'] = $insertdata;
+      }
 
-    if (!App::runningInConsole()) {
-      Excelexport::exportante(array_shift($processedData));
-    } else {
-      echo "Done running the refresh ({$countResults} records were added)!" . PHP_EOL;
+      $saveCount = count($createRows);
+      $updateCount = count($updateRows);
+
+      $processedData['records'] = $insertData;
+
+      if (!App::runningInConsole()) {
+        Excelexport::exportante(array_shift($processedData));
+
+        return View::make('refresh.index')->with('title', 'Refresh result')->with('total_count', $totalCount)->with('save_count', $saveCount)->with('update_count', $updateCount);
+
+      } else {
+        echo "Done running the refresh ({$saveCount} records were added | {$updateCount} records were updated)!" . PHP_EOL;
+      }
     }
-    
+    return View::make('refresh.index')->with('title', 'Refresh result')->with('total_count', 0)->with('save_count', 0)->with('update_count', 0);
   }
 
   public function search() {
     $socrata = new Socrata();
     $data = $socrata->get('v3nw-usd7.json', array('$limit' => 50));
-    d($data);
   }
 
 }
