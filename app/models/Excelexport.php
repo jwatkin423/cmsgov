@@ -2,6 +2,8 @@
 
 class Excelexport extends Eloquent {
 
+  // The actually export function
+
   public static function exportante($cms) {
 
     Excel::create('CMS-Records', function ($excel) use ($cms) {

@@ -42,7 +42,7 @@ class Cms extends Eloquent {
     'cms_pub_date'
   );
 
-
+  // Make the physician name look nice
   public static function physName($firstName = null, $lastName = null, $suffix = null) {
     $name = $firstName == null ? '' : ucfirst($firstName);
     $name .= $lastName == null ? '' : ' ' . ucfirst($lastName);

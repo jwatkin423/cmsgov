@@ -9,25 +9,52 @@ class RefreshController extends BaseController {
     $updateRows = array();
     $insertData = array();
 
+    // Connection to cms.gov data
     $socrata = new Socrata();
 
+    // previous count in the DB
     $previousCount = Summarycount::get()->first();
 
+    // Get the count of the current numbers of records
     if ($count = $socrata->get('v3nw-usd7.json', array('$query' => "SELECT count(record_id)"))) {
       $count = array_shift($count);
+
+      // Set the new count
       $newCount = intval($count['count_record_id']);
+
+      // Save the new count to the DB
       $sc = Summarycount::where('sc_id', '=', "1")->first();
       $sc->current_count = $newCount;
       $sc->save();
     }
 
-    $offset = $previousCount->current_count + 1;
+    // Process only 1000 at a time
+    if ($previousCount->current_count == null || $previousCount->current_count == false) {
+      $currentCount = 1;
+    } else {
+      $currentCount = $previousCount->current_count;
+    }
+
+    $offset = $currentCount + 1;
+
     $limit = $count['count_record_id'] - $previousCount->current_count;
 
+    if ($limit > 1000) {
+      $limit = 1000;
+      $newSaveCount = $currentCount + $limit;
+
+      $sc = Summarycount::where('sc_id', '=', "1")->first();
+      $sc->current_count = $newSaveCount;
+      $sc->save();
+
+    }
+
+    // Get the new records
     $data = $socrata->get('v3nw-usd7.json', array(
       '$limit' => $limit, '$offset' => $offset, '$select' => self::$selectString
     ));
 
+    // Loop through each record to build array to insert into DB
     foreach ($data as $row) {
       $insertData[] = array(
         'cms_recipient_type' => isset($row['covered_recipient_type']) ? $row['covered_recipient_type'] : null,
@@ -58,7 +85,8 @@ class RefreshController extends BaseController {
     }
 
     $totalCount = count($insertData);
-
+    // Insert records into DB
+    // Update if need be
     if ($totalCount > 0) {
       foreach ($insertData as $row) {
         if (Cms::where('cms_ext_id', '=', $row['cms_ext_id'])->exists()) {
@@ -82,6 +110,7 @@ class RefreshController extends BaseController {
 
       $processedData['records'] = $insertData;
 
+      // If not running in the command line, generete excel file
       if (!App::runningInConsole()) {
         Excelexport::exportante(array_shift($processedData));
 
@@ -91,12 +120,9 @@ class RefreshController extends BaseController {
         echo "Done running the refresh ({$saveCount} records were added | {$updateCount} records were updated)!" . PHP_EOL;
       }
     }
-    return View::make('refresh.index')->with('title', 'Refresh result')->with('total_count', 0)->with('save_count', 0)->with('update_count', 0);
-  }
 
-  public function search() {
-    $socrata = new Socrata();
-    $data = $socrata->get('v3nw-usd7.json', array('$limit' => 50));
+    // If no new records, return this view
+    return View::make('refresh.index')->with('title', 'Refresh result')->with('total_count', 0)->with('save_count', 0)->with('update_count', 0);
   }
 
 }
