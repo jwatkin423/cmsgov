@@ -71,8 +71,6 @@ class CmsController extends BaseController {
 
         $s = json_encode($d);
 
-        Log::debug($s);
-
         return Response::json($d);
       }
 
